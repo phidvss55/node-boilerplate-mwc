@@ -3,6 +3,8 @@ import bodyParser from 'body-parser';
 import { connectionToDatabase } from './database';
 import IController from './factory/controller.interface';
 import errorMiddleware from './middlewares/error.middleware';
+import cookieParser from 'cookie-parser';
+import loggerMiddleware from './middlewares/logger';
 
 class Application {
   public app: express.Application;
@@ -20,13 +22,15 @@ class Application {
 
   private initializeMiddlewares() {
     this.app.use(bodyParser.json());
+    this.app.use(cookieParser());
+    this.app.use(loggerMiddleware);
   }
 
   private initializeErrorHandling() {
     this.app.use(errorMiddleware);
   }
 
-  private initializeControllers(controllers: any[]) {
+  private initializeControllers(controllers: IController[]) {
     const { API_VERSION } = process.env;
     controllers.forEach((controller) => {
       this.app.use(`/${API_VERSION}`, controller.router);

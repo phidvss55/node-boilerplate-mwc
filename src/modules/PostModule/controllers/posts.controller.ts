@@ -1,10 +1,12 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import Post from '../interfaces/post.interface';
 import PostService from '../services/posts.service';
 import IController from '../../../factory/controller.interface';
 import PostNotFoundException from '../exceptions/post-not-found.exception';
 import validationMiddleware from '../../../middlewares/validation.middleware';
 import CreatePostDto from '../validations/post.dto';
+import authMiddleware from '../../../middlewares/auth.middleware';
+import RequestWithUser from '../../Authentication/interfaces/requestWithUser.interface';
 
 class PostsController implements IController {
   public path = '/posts';
@@ -17,12 +19,15 @@ class PostsController implements IController {
     this.postService = postService;
   }
 
-  public intializeRoutes() {
-    this.router.get('/posts', this.getAllPosts);
-    this.router.post('/posts', validationMiddleware(CreatePostDto), this.createPost);
-    this.router.get('/posts/:id', this.getPostById);
-    this.router.put('/posts/:id', validationMiddleware(CreatePostDto, true), this.updatePostById);
-    this.router.delete('/posts/:id', this.removePostById);
+  public async intializeRoutes() {
+    this.router.get(this.path, this.getAllPosts);
+    this.router.get(`${this.path}/:id`, this.getPostById);
+
+    this.router
+      .all(`${this.path}/*`, authMiddleware)
+      .post(`${this.path}`, authMiddleware, validationMiddleware(CreatePostDto), this.createPost)
+      .put(`${this.path}/:id`, validationMiddleware(CreatePostDto, true), this.updatePostById)
+      .delete(`${this.path}/:id`, this.removePostById);
   }
 
   getAllPosts = async (req: Request, res: Response) => {
@@ -30,7 +35,7 @@ class PostsController implements IController {
     res.status(200).send(response);
   };
 
-  createPost = async (req: Request, res: Response) => {
+  createPost = async (req: RequestWithUser, res: Response) => {
     const post: Post = req.body;
     const response = await this.postService.createPost(post);
 
