@@ -1,7 +1,9 @@
 import * as express from 'express';
+import IController from '../../../factory/controller.interface';
 
-class ImagesController {
+class ImagesController implements IController {
   public router = express.Router();
+  public path = '';
 
   // private posts: Post[] = [
   //   {

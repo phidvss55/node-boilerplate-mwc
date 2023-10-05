@@ -4,10 +4,9 @@ import 'dotenv/config';
 const { MONGO_HOST, MONGO_PORT, MONGO_DATABASE } = process.env;
 
 export const connectionToDatabase = () => {
-  const str = `mongodb://${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
-  console.log('strrrrrrrrrr', str);
+  const strConnection = `mongodb://${MONGO_HOST}:${MONGO_PORT}/${MONGO_DATABASE}`;
   mongoose
-    .connect(str)
+    .connect(strConnection)
     .then(() => {
       console.log('Connected to database');
     })

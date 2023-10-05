@@ -7,8 +7,48 @@ class PostService {
     return await createdPost.save();
   }
 
-  getImageList(): string[] {
-    return ['image1.jpg', 'image2.png'];
+  async getAllPosts(): Promise<Post[]> {
+    try {
+      const posts: Post[] = await PostModel.find({}).exec();
+
+      return posts;
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      throw error;
+    }
+  }
+
+  async getPostById(id: any): Promise<Post | null> {
+    try {
+      const post = await PostModel.findById(id).exec();
+      return post;
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      throw error;
+    }
+  }
+
+  async updatePostById(id: any, postData: Post): Promise<Post | null> {
+    try {
+      const post = await PostModel.findByIdAndUpdate(id, postData, { new: true });
+
+      return post;
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      throw error;
+    }
+  }
+
+  async removePostById(id: any): Promise<any> {
+    try {
+      const post = await PostModel.findByIdAndDelete(id);
+      console.log('post', post);
+
+      return post;
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      throw error;
+    }
   }
 }
 

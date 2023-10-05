@@ -1,22 +1,29 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import { connectionToDatabase } from './database';
+import IController from './factory/controller.interface';
+import errorMiddleware from './middlewares/error.middleware';
 
 class Application {
   public app: express.Application;
   public port: number;
 
-  constructor(controllers: any[], port: number) {
+  constructor(controllers: IController[], port: number) {
     this.app = express();
     this.port = port;
 
     this.connectToTheDatabase();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
+    this.initializeErrorHandling();
   }
 
   private initializeMiddlewares() {
     this.app.use(bodyParser.json());
+  }
+
+  private initializeErrorHandling() {
+    this.app.use(errorMiddleware);
   }
 
   private initializeControllers(controllers: any[]) {
