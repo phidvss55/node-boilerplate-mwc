@@ -1,21 +1,26 @@
 import * as bcrypt from 'bcryptjs';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import IController from '../../../factory/controller.interface';
 import LoginDto from '../validations/login.dto';
 import UserModel from '../../UserModule/entities/user.entity';
 import validationMiddleware from '../../../middlewares/validation.middleware';
 import UserAlreadyExistsException from '../exceptions/user-existed.exception';
-import User from '../../UserModule/interfaces/user.interface';
 import WrongCredentialsException from '../exceptions/wrong-credentials.exception';
 import CreateUserDto from '../../UserModule/validations/create-user.dto';
+import UserService from '../../UserModule/services/user.service';
+import { asJson } from '../../../common/utils';
+import { comparePassword, createCookie, createToken } from '../utils/token';
 
 class AuthenticationController implements IController {
   public path = '/auth';
   public router = express.Router();
   private user = UserModel;
 
-  constructor() {
+  private userService: UserService;
+
+  constructor(userService: UserService) {
     this.initializeRoutes();
+    this.userService = userService;
   }
 
   private initializeRoutes() {
@@ -23,30 +28,31 @@ class AuthenticationController implements IController {
     this.router.post(`${this.path}/login`, validationMiddleware(LoginDto), this.loggingIn);
   }
 
-  private register = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  public register = async (request: Request, response: Response, next: NextFunction) => {
     const userData: CreateUserDto = request.body;
-    if (await this.user.findOne({ email: userData.email })) {
+    const checkUser = await this.userService.findUserByEmail(userData.email);
+
+    if (checkUser) {
       next(new UserAlreadyExistsException(userData.email));
     } else {
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
-      const user: User = await this.user.create({
-        ...userData,
-        password: hashedPassword,
-      });
+      const user = await this.userService.createUser(userData);
 
-      const { password, ...newUser } = user;
-      response.status(201).send(newUser);
+      const tokenData = createToken(user);
+      response.setHeader('Set-Cookie', [createCookie(tokenData)]);
+      response.status(201).json(asJson(true, user));
     }
   };
 
-  private loggingIn = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  public loggingIn = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const logInData: LoginDto = request.body;
-    const user = await this.user.findOne({ email: logInData.email });
+    const user = await this.userService.findUserByEmail(logInData.email);
     if (user) {
-      const isPasswordMatching = await bcrypt.compare(logInData.password, user.password);
-      if (isPasswordMatching) {
-        user.password = '';
-        response.send(user);
+      const isMatching = await comparePassword(logInData.password, user?.password || '');
+      if (isMatching) {
+        user.password = undefined;
+        const tokenData = createToken(user);
+        response.setHeader('Set-Cookie', [createCookie(tokenData)]);
+        response.status(200).send(user);
       } else {
         next(new WrongCredentialsException());
       }

@@ -12,6 +12,9 @@ class CreateUserDto {
   public email!: string;
 
   @IsString()
+  public phone!: string;
+
+  @IsString()
   public password!: string;
 
   @IsOptional()
