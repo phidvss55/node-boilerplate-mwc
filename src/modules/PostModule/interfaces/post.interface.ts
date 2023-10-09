@@ -1,5 +1,8 @@
+import { ObjectId } from 'mongoose';
+
 interface Post {
-  author: string;
+  _id?: ObjectId;
+  authorId: string;
   content: string;
   title: string;
 }

@@ -7,6 +7,7 @@ import validationMiddleware from '../../../middlewares/validation.middleware';
 import CreatePostDto from '../validations/post.dto';
 import authMiddleware from '../../../middlewares/auth.middleware';
 import RequestWithUser from '../../Authentication/interfaces/requestWithUser.interface';
+import { asJson } from '../../../common/utils';
 
 class PostsController implements IController {
   public path = '/posts';
@@ -32,21 +33,20 @@ class PostsController implements IController {
 
   getAllPosts = async (req: Request, res: Response) => {
     const response = await this.postService.getAllPosts();
-    res.status(200).send(response);
+    res.status(200).send(asJson(true, response));
   };
 
   createPost = async (req: RequestWithUser, res: Response) => {
     const post: Post = req.body;
-    const response = await this.postService.createPost(post);
-
-    res.send(response);
+    const response = await this.postService.createPost(post, req.user?._id || null);
+    res.status(201).send(asJson(true, response));
   };
 
   getPostById = async (request: Request, res: Response, next: NextFunction) => {
     const { id } = request.params;
     const _post = await this.postService.getPostById(id);
     if (_post) {
-      res.status(200).send(_post);
+      res.status(200).send(asJson(true, _post));
     } else {
       next(new PostNotFoundException(id));
     }

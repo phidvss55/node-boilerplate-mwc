@@ -23,3 +23,10 @@ Builds the app at **build**, cleaning the folder first
     npm run start
 
 Starts the app in production
+
+---
+
+### Note:
+
+1. About two-factor authentication
+   With two-factor authentication, the user needs to prove his identify in two ways. A straightforward example of that is using an ATM, you need a bank card - something you possess - and the PIN code - something you know

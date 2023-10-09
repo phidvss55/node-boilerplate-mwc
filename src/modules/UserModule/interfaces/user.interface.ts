@@ -5,6 +5,7 @@ interface User {
   email: string;
   password?: string;
   name?: string;
+  twoFactorAuthenticationCode?: string;
 
   address?: {
     street: string;

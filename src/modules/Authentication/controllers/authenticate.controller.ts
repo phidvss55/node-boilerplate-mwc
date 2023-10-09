@@ -10,6 +10,9 @@ import CreateUserDto from '../../UserModule/validations/create-user.dto';
 import UserService from '../../UserModule/services/user.service';
 import { asJson } from '../../../common/utils';
 import { comparePassword, createCookie, createToken } from '../utils/token';
+import authMiddleware from '../../../middlewares/auth.middleware';
+import RequestWithUser from '../interfaces/requestWithUser.interface';
+import AuthenticationService from '../services/authenticate.service';
 
 class AuthenticationController implements IController {
   public path = '/auth';
@@ -17,15 +20,19 @@ class AuthenticationController implements IController {
   private user = UserModel;
 
   private userService: UserService;
+  private authenticationService: AuthenticationService;
 
-  constructor(userService: UserService) {
+  constructor(userService: UserService, authenService: AuthenticationService) {
     this.initializeRoutes();
     this.userService = userService;
+    this.authenticationService = authenService;
   }
 
   private initializeRoutes() {
     this.router.post(`${this.path}/register`, validationMiddleware(CreateUserDto), this.register);
     this.router.post(`${this.path}/login`, validationMiddleware(LoginDto), this.loggingIn);
+    this.router.post(`${this.path}/logout`, this.loggingOut);
+    this.router.post(`${this.path}/2fa/generate`, authMiddleware, this.generateTwoFactorAuthenticationCode);
   }
 
   public register = async (request: Request, response: Response, next: NextFunction) => {
@@ -50,15 +57,36 @@ class AuthenticationController implements IController {
       const isMatching = await comparePassword(logInData.password, user?.password || '');
       if (isMatching) {
         user.password = undefined;
+
         const tokenData = createToken(user);
         response.setHeader('Set-Cookie', [createCookie(tokenData)]);
-        response.status(200).send(user);
+        response.status(200).send(
+          asJson(true, {
+            user,
+            token: tokenData,
+          }),
+        );
       } else {
         next(new WrongCredentialsException());
       }
     } else {
       next(new WrongCredentialsException());
     }
+  };
+
+  public loggingOut = (req: Request, res: Response) => {
+    res.setHeader('Set-Cookie', ['Authorization=;Max-age=0']);
+    res.status(200).send(asJson(true, { token: null }));
+  };
+
+  public generateTwoFactorAuthenticationCode = async (request: RequestWithUser, response: Response) => {
+    const user = request.user;
+    const { otpauthUrl, base32 } = this.authenticationService.getTwoFactorAuthenticationCode();
+
+    await this.user.findByIdAndUpdate(user?._id, {
+      twoFactorAuthenticationCode: base32,
+    });
+    this.authenticationService.respondWithQRCode(otpauthUrl || '', response);
   };
 }
 

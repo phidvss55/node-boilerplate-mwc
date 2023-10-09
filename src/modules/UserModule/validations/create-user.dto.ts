@@ -1,5 +1,6 @@
 import { IsOptional, IsString, ValidateNested } from 'class-validator';
 import CreateAddressDto from './address.dto';
+import { Type } from 'class-transformer';
 
 class CreateUserDto {
   @IsString()
@@ -19,6 +20,7 @@ class CreateUserDto {
 
   @IsOptional()
   @ValidateNested()
+  @Type(() => CreateAddressDto)
   public address?: CreateAddressDto;
 }
 

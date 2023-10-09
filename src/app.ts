@@ -5,6 +5,7 @@ import IController from './factory/controller.interface';
 import errorMiddleware from './middlewares/error.middleware';
 import cookieParser from 'cookie-parser';
 import loggerMiddleware from './middlewares/logger';
+import 'reflect-metadata';
 
 class Application {
   public app: express.Application;

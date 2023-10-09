@@ -1,14 +1,17 @@
-import { IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 class CreateAddressDto {
   @IsString()
-  public street!: string;
+  @IsNotEmpty()
+  public street?: string;
 
   @IsString()
+  @IsNotEmpty()
   public city!: string;
 
+  @IsOptional()
   @IsString()
-  public country!: string;
+  public country?: string;
 }
 
 export default CreateAddressDto;
